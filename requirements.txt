@@ -5,3 +5,39 @@ scikit-learn
 torchvision
 streamlit
 SQLAlchemy
+
+sentence-transformers
+fuzzywuzzy[speedup]
+captum
+
+
+#### PYTORCH MAC OS (CPU) SETUP
+
+torch==2.8.0
+torchvision==0.23.0
+torchaudio==2.8.0
+
+-f https://data.pyg.org/whl/torch-2.8.0+cpu.html
+torch-geometric>=2.7.0
+pyg_lib
+torch_scatter
+torch_sparse
+torch_cluster
+torch_spline_conv
+
+#### PYTORCH WSL SETUP
+
+# # PyTorch (CUDA 12.9 wheels) — keep PyPI, add PyTorch as extra
+# --extra-index-url https://download.pytorch.org/whl/cu129
+# torch==2.8.0
+# torchvision
+# torchaudio
+
+# # PyG wheels matching torch 2.8.0 + cu129
+# -f https://data.pyg.org/whl/torch-2.8.0+cu129.html
+# torch-geometric
+# pyg_lib
+# torch_scatter
+# torch_sparse
+# torch_cluster
+# torch_spline_conv
