@@ -3,7 +3,7 @@
 ## Goal and Parameters
 - Create movie recommendations based on cosine similarity
 - Data: The TMDB used as a base (see: https://www.themoviedb.org/)
-- Input: List of user chosen movies
+- Input: List of user chosen movies (length tdb)
 - Output: List of recommended or similar movies
 
 ## General
@@ -19,16 +19,21 @@
 |------|---------|
 | GitHub | Version control and deployment pipeline |
 | PostgreSQL | Database |
-| scikit-learn | Encoding data |
-| PyTorch | Create embeddings |
+| PYG | GNN Library |
 | Streamlit | Web GUI and processing user inputs |
 | FastAPI | RESTful interface for requesting recommendations and using Streamlit connection |
 | Docker | Containerization (one container for Streamlit and Backend and FastAPI) |
 | ONNX | Save and use model |
-| Some VPS Hoster | Host all the containers (and DB?) |
-| Supabase | Hosting the DB? |
+| Some Hosting Provider | PVD |
+| WANDB| Training and Hyperparam optimisation |
+| RUFF | Linting and Formatting (on saving) |
+| OPT: Github Actions| Building (if we host the application somewhere) |
+| OPT: Airflow | Task schedueling |
+| OPT: DVC| Data Versioning for the Flywheel |
 
 ## Application "Architecture" (on VPS or local)
+- ML Workflow:
+    - Data > Train model > save model with WANDB > package model with ONNX > deploy it to DVC model registry 
 - DB Server on VPS or Supabase
 - Container backend:
     - Pretrained ONNX Model file
@@ -38,8 +43,8 @@
     - Streamlit app
     - Connecting to the FastAPI Service over web
 
-## Development Workflow
-- tbd
+## Questions:
+- How do we get the versioned model into the container? during build time via dockerfile or pipeline?
 
 ## Project structure (vibe written)
 Note: The PostgreSQL instance has to be set up independently.
