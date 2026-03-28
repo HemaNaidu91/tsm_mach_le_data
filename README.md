@@ -1,5 +1,15 @@
 # MSE TSM MachLeData Group Project
 
+## Further Steps:
+1. (Paidi) DrawIO for an architecture and workflow
+2. (Joël) Sketch a Presenstion Ptich Deck
+3. Meet up and finalize Pitch - 06.04.2026 (10:00)
+4. Work on stuff:
+   1. Pedro: Building and packing the model
+   2. Rino: FrontEnd (Streamlit)
+   3. Peidi: Deployment and Docker Images
+   4. Joël: Backend (Fast API, ORM, n Stuff)
+
 ## About the Project
 
 Repo for the Groupproject TSM MachLeData.<br>
