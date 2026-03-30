@@ -18,6 +18,8 @@ dependencies = [
   "fuzzywuzzy[speedup]",
   "captum",
   "python-dotenv",
+  "onnx",
+  "onnxruntime",
 ]
 
 [project.optional-dependencies]
