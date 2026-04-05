@@ -1,3 +1,6 @@
+# wandb save of local runs 
+training/poc/wandb
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
