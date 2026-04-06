@@ -68,3 +68,16 @@ your-repo/
 │   └── train.py                # PyTorch training script
 └── docker-compose.yml
 ```
+
+
+Notes on interfaces:
+
+Model M - Backend B:
+- B --> M: [{"movie": some_id, "rating": some_rating}, {...}]
+- M --> B: [{"movie": some_id, "sim_score": some_score}, {...}]
+
+Backend B - Frontend F:
+- B --> F: [ {"movie":some_id, "tags" : ...}, {} ]
+- F --> B: [{"movie": some_id, "rating": some_rating}, {...}]
+
+Ports: defaults from FastAPI, Streamlit, and Postgres
