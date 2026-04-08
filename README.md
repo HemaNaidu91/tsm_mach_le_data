@@ -36,7 +36,9 @@ See project_documents for further information
 | Python          | 3.12    | https://www.python.org/downloads/               |
 | PostgresQL      | 18      | https://www.postgresql.org/download/            |
 | Docker Desktop  | 4.19    | https://docs.docker.com/get-started/get-docker/ |
-| ...             | ...     | ...                                             |
+| Libraries*      | -       | see the requirements                            |
+
+*Libraries and packages only need to be installed manually if the project is not run within docker
 
 ## Data
 
