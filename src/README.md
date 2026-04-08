@@ -3,9 +3,12 @@
 This is a quick guide on how to build and start the application
 
 Notes:
-- All virtual environments should be named ```.venv```
-- The config files should be named ```.env```
-- The .env-files will be added to the repo. This is usually not reccomended. But because this is only a school project with public data, there is no real security risk. Additionally, it makes the hand-in of the project easier.
+- About environments:
+  - All virtual environments should be named ```.venv```
+  - The config files should be named ```.env```
+  - The .env-files will be added to the repo. This is usually not reccomended. But because this is only a school project with public data, there is no real security risk. Additionally, it makes the hand-in of the project easier.
+- About backend:
+  - The backend uses a simplified structure due to its limited size
 
 ## For Development - without docker
 
@@ -26,7 +29,7 @@ Notes:
    2. Activate and install the concerning reqruirements with uv
 
 3. Boot the services:
-   1. Backend: ```main.py```
+   1. Backend: ```run_dev_server.py```
    2. Frontend: ```tbd.py```
 
 
