@@ -89,17 +89,17 @@ model = mlflow.onnx.load_model("models:/movie-recommender-model/Production")
 Architecture Diagram With Both:
 
 [Training]
-   ↓
+   ->
 [GNN Model] 
-   ↓
+   ->
 [W&B] (Experiment tracking: metrics, loss, hyperparams)
-   ↓
+   ->
 Convert → ONNX
-   ↓
+   ->
 [MLflow] (Model registry: store, version, promote)
-   ↓
+   ->
 [FastAPI] (loads model)
-   ↓
+   ->
 [Streamlit] (UI for users)
  
 
