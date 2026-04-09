@@ -45,7 +45,7 @@
 
 ## Questions:
 - How do we get the versioned model into the container? during build time via dockerfile or pipeline?
-### Snippets Model Registry(vibe written)
+### Snippets Model Registry and Exporting(vibe written)
 Step-by-Step Flow
 
 Train your model
