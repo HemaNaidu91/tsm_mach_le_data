@@ -123,7 +123,7 @@ Easy rollback & deployment
 
 Note: The PostgreSQL instance has to be set up independently.
 
-
+```
 your-repo/
 ├── .github/
 │   └── workflows/
@@ -141,7 +141,7 @@ your-repo/
 ├── training/
 │   └── train.py                # PyTorch training script
 └── docker-compose.yml
-
+```
 
 
 Notes on interfaces:
