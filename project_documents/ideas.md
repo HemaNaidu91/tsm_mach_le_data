@@ -45,7 +45,7 @@
 
 ## Questions:
 - How do we get the versioned model into the container? during build time via dockerfile or pipeline?
-## Snippets Model Registry
+### Snippets Model Registry(vibe written)
 Step-by-Step Flow
 
 Train your model
@@ -117,7 +117,7 @@ MLflow
 Model versioning
 Clean separation between experimental & production models
 Easy rollback & deployment
-(vibe written))
+
 
 ## Project structure (vibe written)
 
