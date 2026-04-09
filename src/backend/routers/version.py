@@ -12,5 +12,5 @@ router = APIRouter()
 
 
 @router.get("/version", response_model=VersionResponse)
-def get_version():
+async def get_version():
     return VersionResponse(version=float(os.getenv("VERSION_NR")))

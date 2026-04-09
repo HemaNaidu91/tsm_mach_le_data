@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 from routers.version import router as version_router
+from routers.recommendation import router as recommendation_router
 from fastapi.middleware.cors import CORSMiddleware
 
 from dotenv import load_dotenv
@@ -28,11 +29,9 @@ app = FastAPI(
 )
 
 # add routers (this could be optimized but is sufficient for two routers)
-app.include_router(
-    version_router,
-    prefix="/api",
-    tags=["version"],
-)
+app.include_router(version_router, prefix="/api", tags=["version"])
+app.include_router(recommendation_router, prefix="/api", tags=["recommendation"])
+
 
 # setup cors
 origins: list = [
