@@ -59,7 +59,7 @@ import wandb
 wandb.init(project="movie-recommender")
 wandb.log({"loss": loss, "accuracy": acc})
 
-✅ Here you track every run, compare metrics, visualize hyperparameter impact.
+ Here you track every run, compare metrics, visualize hyperparameter impact.
 
 Convert model to ONNX
 
@@ -85,7 +85,9 @@ Deploy model from MLflow in FastAPI
 import mlflow.onnx
 
 model = mlflow.onnx.load_model("models:/movie-recommender-model/Production")
-🔹 Architecture Diagram With Both
+
+Architecture Diagram With Both:
+
 [Training]
    ↓
 [GNN Model] 
@@ -99,8 +101,7 @@ Convert → ONNX
 [FastAPI] (loads model)
    ↓
 [Streamlit] (UI for users)
-   ↓
-[PostgreSQL] (movie data & embeddings)
+ 
 
 Important:
 
