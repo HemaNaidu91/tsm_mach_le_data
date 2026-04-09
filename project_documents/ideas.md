@@ -45,6 +45,78 @@
 
 ## Questions:
 - How do we get the versioned model into the container? during build time via dockerfile or pipeline?
+## Snippets Model Registry
+Step-by-Step Flow
+
+Train your model
+
+GNN → train on movie dataset → output model
+
+Log experiments to W&B
+
+import wandb
+
+wandb.init(project="movie-recommender")
+wandb.log({"loss": loss, "accuracy": acc})
+
+✅ Here you track every run, compare metrics, visualize hyperparameter impact.
+
+Convert model to ONNX
+
+torch.onnx.export(model, dummy_input, "movie_model.onnx")
+
+Log model to MLflow registry
+
+import mlflow.onnx
+
+mlflow.start_run()
+mlflow.onnx.log_model(onnx_model=model, artifact_path="model")
+mlflow.end_run()
+
+Register version in MLflow
+
+mlflow.register_model(
+    "runs:/<run_id>/model",
+    "movie-recommender-model"
+)
+
+Deploy model from MLflow in FastAPI
+
+import mlflow.onnx
+
+model = mlflow.onnx.load_model("models:/movie-recommender-model/Production")
+🔹 Architecture Diagram With Both
+[Training]
+   ↓
+[GNN Model] 
+   ↓
+[W&B] (Experiment tracking: metrics, loss, hyperparams)
+   ↓
+Convert → ONNX
+   ↓
+[MLflow] (Model registry: store, version, promote)
+   ↓
+[FastAPI] (loads model)
+   ↓
+[Streamlit] (UI for users)
+   ↓
+[PostgreSQL] (movie data & embeddings)
+
+Important:
+
+W&B does not feed the model into FastAPI
+MLflow is used only to serve the model to FastAPI
+
+Benefits of Using Both:
+W&B
+Real-time dashboards
+Compare different GNN hyperparameters
+Team collaboration
+MLflow
+Model versioning
+Clean separation between experimental & production models
+Easy rollback & deployment
+(vibe coded)
 
 ## Project structure (vibe written)
 Note: The PostgreSQL instance has to be set up independently.
