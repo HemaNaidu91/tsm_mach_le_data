@@ -121,7 +121,7 @@ Lightweight, fast, and safe.
 Works for any PyG layer, even GAT or custom convolutions.
 
 
-Architecture Diagram With Both:
+Architecture Diagram :
 
 [Training]
    ->
