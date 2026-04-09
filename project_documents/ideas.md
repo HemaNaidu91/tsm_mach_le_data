@@ -122,7 +122,7 @@ Easy rollback & deployment
 ## Project structure (vibe written)
 Note: The PostgreSQL instance has to be set up independently.
 
-```
+
 your-repo/
 ├── .github/
 │   └── workflows/
