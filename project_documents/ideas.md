@@ -52,40 +52,75 @@ Train your model
 
 GNN → train on movie dataset → output model
 
-Log experiments to W&B
+1.Track and select your best model with W&B
+
+Suppose you log your training to  W&B like this:
 ```python
 import wandb
+import torch
 
-wandb.init(project="movie-recommender")
-wandb.log({"loss": loss, "accuracy": acc})
-```
- Here you track every run, compare metrics, visualize hyperparameter impact.
+wandb.init(project="gnn-project")
 
-Convert model to ONNX
-```python
-torch.onnx.export(model, dummy_input, "movie_model.onnx")
-```
-Log model to MLflow registry
-```python
-import mlflow.onnx
+# Training loop
+for epoch in range(epochs):
+    train_loss = train(model, data)
+    val_acc = evaluate(model, val_data)
+    wandb.log({"epoch": epoch, "train_loss": train_loss, "val_acc": val_acc})  # Here you track every run, compare metrics, visualize hyperparameter impact.
 
-mlflow.start_run()
-mlflow.onnx.log_model(onnx_model=model, artifact_path="model")
-mlflow.end_run()
+    # Save best model locally & to W&B
+    if val_acc > best_val_acc:
+        best_val_acc = val_acc
+        torch.save(model.state_dict(), "best_model.pth")
+        wandb.save("best_model.pth")
 ```
-Register version in MLflow
-```python
-mlflow.register_model(
-    "runs:/<run_id>/model",
-    "movie-recommender-model"
-)
-```
-Deploy model from MLflow in FastAPI
-```python
-import mlflow.onnx
+torch.save is safe for PyG models.
+W&B keeps a record of every run → you can pick the best checkpoint.
 
-model = mlflow.onnx.load_model("models:/movie-recommender-model/Production")
+2. Prepare for backend deployment (no ONNX)
+
+Instead of ONNX, use TorchScript:
+```python
+import torch
+from torch_geometric.data import Data
+
+# Load your trained model
+model.load_state_dict(torch.load("best_model.pth"))
+model.eval()
+
+# Example dummy input (graph with 5 nodes and 4 edges)
+dummy_data = Data(x=torch.randn(5, num_features),
+                  edge_index=torch.tensor([[0,1,2,3],[1,2,3,4]], dtype=torch.long))
+
+# Trace the model
+scripted_model = torch.jit.trace(model, (dummy_data.x, dummy_data.edge_index))
+scripted_model.save("best_model_scripted.pt")
 ```
+Advantages:
+
+Fully backend-compatible (Python, C++, TorchScript runtime).
+No ONNX conversion errors.
+You can deploy in FastAPI or any server.
+
+3. Load in backend for inference
+```python
+import torch
+from torch_geometric.data import Data
+
+# Load TorchScript model
+model = torch.jit.load("best_model_scripted.pt")
+model.eval()
+
+# Example inference
+data = Data(x=torch.randn(5, num_features),
+            edge_index=torch.tensor([[0,1,2,3],[1,2,3,4]], dtype=torch.long))
+with torch.no_grad():
+    out = model(data.x, data.edge_index)
+print(out)
+```
+Lightweight, fast, and safe.
+Works for any PyG layer, even GAT or custom convolutions.
+
+
 Architecture Diagram With Both:
 
 [Training]
@@ -94,29 +129,12 @@ Architecture Diagram With Both:
    ->
 [W&B] (Experiment tracking: metrics, loss, hyperparams)
    ->
-Convert → ONNX
-   ->
-[MLflow] (Model registry: store, version, promote)
+Save the scripted model using Torchscript
    ->
 [FastAPI] (loads model)
-   ->
+   <->
 [Streamlit] (UI for users)
  
-
-Important:
-
-W&B does not feed the model into FastAPI
-MLflow is used only to serve the model to FastAPI
-
-Benefits of Using Both:
-W&B
-Real-time dashboards
-Compare different GNN hyperparameters
-Team collaboration
-MLflow
-Model versioning
-Clean separation between experimental & production models
-Easy rollback & deployment
 
 
 ## Project structure (vibe written)
