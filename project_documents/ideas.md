@@ -117,9 +117,10 @@ MLflow
 Model versioning
 Clean separation between experimental & production models
 Easy rollback & deployment
-(vibe coded)
+(vibe written))
 
 ## Project structure (vibe written)
+
 Note: The PostgreSQL instance has to be set up independently.
 
 
