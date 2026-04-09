@@ -19,9 +19,9 @@ Base: object = declarative_base()
 
 # provide dependency for fastapi - session factory
 def get_db():
-    db = session_local
+    db = session_local()
 
     try:
         yield db
     finally:
-        close()
+        db.close()
