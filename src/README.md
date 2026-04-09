@@ -32,6 +32,8 @@ Notes:
    1. Backend: ```run_dev_server.py```
    2. Frontend: ```tbd.py```
 
+4. FsatAPI Docu available at <a href="localhost:8000/docs">localhost:8000/docs</a> or <a href="127.0.0.1:8000/docs">127.0.0.1:8000/docs</a>.
+
 
 ## For Deployment - with Docker
 tbd

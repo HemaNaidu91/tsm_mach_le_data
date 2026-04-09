@@ -4,6 +4,10 @@ import os
 from dotenv import load_dotenv
 from fastapi import Depends
 
+# Note joel:
+# I know the table schemas and table naming is inconsisten with plural and singluar naming
+# It bothers me, but not so much that i will fix it
+
 # setup the db connection
 load_dotenv()
 
