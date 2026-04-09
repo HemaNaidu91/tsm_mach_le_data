@@ -53,7 +53,7 @@ Train your model
 GNN → train on movie dataset → output model
 
 Log experiments to W&B
-
+```python
 import wandb
 
 wandb.init(project="movie-recommender")
@@ -62,11 +62,11 @@ wandb.log({"loss": loss, "accuracy": acc})
  Here you track every run, compare metrics, visualize hyperparameter impact.
 
 Convert model to ONNX
-
+```python
 torch.onnx.export(model, dummy_input, "movie_model.onnx")
 
 Log model to MLflow registry
-
+```python
 import mlflow.onnx
 
 mlflow.start_run()
@@ -74,14 +74,14 @@ mlflow.onnx.log_model(onnx_model=model, artifact_path="model")
 mlflow.end_run()
 
 Register version in MLflow
-
+```python
 mlflow.register_model(
     "runs:/<run_id>/model",
     "movie-recommender-model"
 )
 
 Deploy model from MLflow in FastAPI
-
+```python
 import mlflow.onnx
 
 model = mlflow.onnx.load_model("models:/movie-recommender-model/Production")
