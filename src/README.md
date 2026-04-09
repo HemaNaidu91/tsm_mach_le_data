@@ -17,7 +17,7 @@ Notes:
       1. username: postgres
       2. password: postgres
    2. If not automatically launched, run:
-      1. shell: ```net start postgresql-x64-15```
+      1. shell: ```net start postgresql-x64-18```
       2. bash:  ```sudo systemctl start postgresql```
    3. Create a database named <i>cinematch</i>
    4. Install the postgres .dump file (see: <a href='https://www.bytebase.com/reference/postgres/how-to/how-to-install-pgdump-on-mac-ubuntu-centos-windows/'>How to install pg_dump on your Mac, Ubuntu, CentOS, Windows</a>)
