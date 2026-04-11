@@ -41,5 +41,5 @@ tbd
 
 ## Shutdown PostgresQL
 
-- shell shutdown postgreSQL: ```net stop postgresql-x64-15```
+- shell shutdown postgreSQL: ```net stop postgresql-x64-18```
 - bash shutdown postgreSQL: ```sudo systemctl stop postgresql```
