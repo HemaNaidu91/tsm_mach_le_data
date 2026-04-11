@@ -90,13 +90,3 @@ def validation_require_one(
             status_code=422, detail="At least one query parameter must be provided."
         )
     return {"title": title, "genres": genres, "tags": tags}
-
-
-"""
-def get_user(db: Session, user_id: int):
-    return db.query(User).filter(User.id == user_id).first()
-
-
-def list_users(db: Session):
-    return db.query(User).all()
-"""

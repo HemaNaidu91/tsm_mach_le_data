@@ -22,21 +22,9 @@ def get_movies(
 
 @router.post("/create_movie_recommendations", response_model=list[MoviesResponse])
 def create_movie_rcommendations(
-    user_movie_ratins: list[int], db: Session = Depends(get_db)
+    user_movie_ratings: list[int], db: Session = Depends(get_db)
 ):
     response: list[MoviesResponse] = (
         recommendation_service.create_movie_recommendations(db=db)
     )
     return response
-
-
-"""
-@router.get("/", response_model=list[UserRead])
-def read_users(db: Session = Depends(get_db)):
-    return list_users(db)  # Pass db session to the service
-
-
-@router.get("/{user_id}", response_model=UserRead)
-def read_user(user_id: int, db: Session = Depends(get_db)):
-    return get_user(db, user_id)
-"""
