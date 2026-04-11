@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from routers.schemas import VersionResponse
+from schemas.version import VersionResponse
 
 # load env variables
 from dotenv import load_dotenv

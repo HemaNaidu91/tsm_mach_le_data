@@ -1,10 +1,12 @@
 from fastapi import FastAPI
-from routers.version import router as version_router
-from routers.recommendation import router as recommendation_router
 from fastapi.middleware.cors import CORSMiddleware
 
 from dotenv import load_dotenv
 import os
+
+from routers.version import router as version_router
+from routers.recommendation import router as recommendation_router
+from routers.enum import router as enum_router
 
 
 # load env variables
@@ -30,7 +32,10 @@ app = FastAPI(
 
 # add routers (this could be optimized but is sufficient for two routers)
 app.include_router(version_router, prefix="/api", tags=["version"])
-app.include_router(recommendation_router, prefix="/api", tags=["recommendation"])
+app.include_router(
+    recommendation_router, prefix="/api/recommendation", tags=["recommendation"]
+)
+app.include_router(enum_router, prefix="/api/enum", tags=["enums"])
 
 
 # setup cors

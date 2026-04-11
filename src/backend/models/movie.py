@@ -5,7 +5,7 @@ from database import Base
 
 class Movies(Base):
     __tablename__ = "movies"
-    __table_args_ = {"schema": "movie"}
+    __table_args__ = {"schema": "movie"}
 
     id = Column(Integer, primary_key=True)
     title = Column(String, nullable=False)
@@ -13,11 +13,12 @@ class Movies(Base):
     links = relationship("Links", back_populates="movies")
     movie_genres = relationship("Movie_genres", back_populates="movies")
     tags = relationship("Tags", back_populates="movies")
+    ratings = relationship("Ratings", back_populates="movies")
 
 
 class Links(Base):
     __tablename__ = "links"
-    __table_args_ = {"schema": "movie"}
+    __table_args__ = {"schema": "movie"}
 
     id = Column(Integer, primary_key=True)
     id_movie = Column(Integer, ForeignKey("movie.movies.id"), nullable=False)
@@ -29,7 +30,7 @@ class Links(Base):
 
 class Movie_genres(Base):
     __tablename__ = "movie_genres"
-    __table_args_ = {"schema": "movie"}
+    __table_args__ = {"schema": "movie"}
 
     id = Column(Integer, primary_key=True)
     id_movie = Column(Integer, ForeignKey("movie.movies.id"), nullable=False)
@@ -41,11 +42,11 @@ class Movie_genres(Base):
 
 class Tags(Base):
     __tablename__ = "tags"
-    __table_args_ = {"schema": "movie"}
+    __table_args__ = {"schema": "movie"}
 
     id = Column(Integer, primary_key=True)
     id_movie = Column(Integer, ForeignKey("movie.movies.id"), nullable=False)
-    id_user = Column(Integer, ForeignKey("users.users"), nullable=False)
+    id_user = Column(Integer, ForeignKey("users.users.id"), nullable=False)
     tag = Column(String, nullable=False)
     timestamp = Column(TIMESTAMP(timezone=False), nullable=False)
 

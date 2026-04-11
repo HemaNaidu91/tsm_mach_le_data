@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
-from typing import Optional, List
-from routers.schemas import GetMoviesResponse
+from schemas.recommendation import *
 from services import recommendation as recommendation_service
 
 # from services.user_service import get_user, list_users
@@ -10,30 +9,25 @@ from database import get_db
 router = APIRouter()
 
 
-@router.get(
-    "/movies", response_model=list[GetMoviesResponse]
-)  # response_model=list[None])
+@router.get("/movies", response_model=list[MoviesResponse])
 def get_movies(
-    title: Optional[str] = None,
-    genres: Optional[List] = Query(None),
-    tags: Optional[List] = Query(None),
+    params: dict = Depends(recommendation_service.validation_require_one),
     db: Session = Depends(get_db),
 ):
-
-    print("TITLE: ", title)
-    print("GENRE: ", genres)
-    print("TAGS: ", tags)
-    response: dict = recommendation_service.get_movies(
-        title=title, genres=genres, tags=tags, db=db
+    response: list[MoviesResponse] = recommendation_service.get_movies(
+        title=params["title"], genres=params["genres"], tags=params["tags"], db=db
     )
-    return [
-        {
-            "movie_id": 418,
-            "movie_title": "some_title",
-            "movie_genres": ["gen1", "gen2"],
-            "movie_tags": ["tag1", "tag2"],
-        }
-    ]
+    return response
+
+
+@router.post("/create_movie_recommendations", response_model=list[MoviesResponse])
+def create_movie_rcommendations(
+    user_movie_ratins: list[int], db: Session = Depends(get_db)
+):
+    response: list[MoviesResponse] = (
+        recommendation_service.create_movie_recommendations(db=db)
+    )
+    return response
 
 
 """

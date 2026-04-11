@@ -5,7 +5,7 @@ from database import Base
 
 class Users(Base):
     __tablename__ = "users"
-    __table_args__ = {"users"}
+    __table_args__ = {"schema": "users"}
 
     id = Column(Integer, primary_key=True)
 
