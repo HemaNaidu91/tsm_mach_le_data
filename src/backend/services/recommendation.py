@@ -76,8 +76,18 @@ def get_movies(
 
 
 def create_movie_recommendations(db: Session):
-    raise HTTPException(status_code=501, detail="Not yet implemented.")
-    return None
+
+    # TODO: Implement model correctly
+    # NOTE: This is just a placeholder, so the function returns something
+
+    import random
+    import string
+
+    letter: str = random.choice(string.ascii_letters)
+    size: int = random.choice([2, 3, 4])
+    movies: list = get_movies(db=db, title=letter, genres=None, tags=None)
+
+    return movies[:size]
 
 
 def validation_require_one(

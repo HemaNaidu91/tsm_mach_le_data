@@ -22,7 +22,7 @@ def get_movies(
 
 @router.post("/create_movie_recommendations", response_model=list[MoviesResponse])
 def create_movie_rcommendations(
-    user_movie_ratings: list[int], db: Session = Depends(get_db)
+    user_movie_ratings: list[UserMovieRatings], db: Session = Depends(get_db)
 ):
     response: list[MoviesResponse] = (
         recommendation_service.create_movie_recommendations(db=db)
