@@ -25,12 +25,12 @@ Notes:
 2. Create and install the local virtual environments as ```.venv```:
    1. Setup as:
       1. ```.src/backend/.venv/```
-      2. ```.src./frontend/.venv/```
+      2. ```.src/frontend/.venv/```
    2. Activate and install the concerning reqruirements with uv
 
 3. Boot the services:
    1. Backend: ```run_dev_server.py```
-   2. Frontend: ```tbd.py```
+   2. Frontend: ```streamlit run main.py```
 
 4. FsatAPI Docu available at <a href="localhost:8000/docs">localhost:8000/docs</a> or <a href="127.0.0.1:8000/docs">127.0.0.1:8000/docs</a>.
 
