@@ -8,32 +8,14 @@ dependencies = [
   "pandas",
   "wandb==0.19.8",
   "python-dotenv",
-  "onnx",
-  "onnxruntime",
   "fastapi",
   "uvicorn",
 ]
 
 [project.optional-dependencies]
-cpu = [
-  "torch==2.8.0",
-  "torchvision",
-  "torch-geometric",
-  "torch-scatter",
-  "torch-sparse",
-  "torch-cluster",
-  "torch-spline-conv",
-]
+cpu = ["onnxruntime", "torch==2.8.0", "torch-geometric"]
 
-gpu = [
-  "torch==2.8.0",
-  "torchvision",
-  "torch-geometric",
-  "torch-scatter",
-  "torch-sparse",
-  "torch-cluster",
-  "torch-spline-conv",
-]
+gpu = ["onnxruntime-gpu", "torch==2.8.0", "torch-geometric"]
 
 
 [tool.uv]
@@ -48,20 +30,8 @@ url = "https://download.pytorch.org/whl/cpu"
 explicit = true
 
 [[tool.uv.index]]
-name = "pyg-cpu"
-url = "https://data.pyg.org/whl/torch-2.8.0+cpu.html"
-format = "flat"
-explicit = true
-
-[[tool.uv.index]]
 name = "pytorch-cu129"
 url = "https://download.pytorch.org/whl/cu129"
-explicit = true
-
-[[tool.uv.index]]
-name = "pyg-cu129"
-url = "https://data.pyg.org/whl/torch-2.8.0+cu129.html"
-format = "flat"
 explicit = true
 
 [tool.uv.sources]
@@ -69,30 +39,6 @@ torch = [
   { index = "pytorch-cpu", extra = "cpu" },
   { index = "pytorch-cu129", extra = "gpu" },
 ]
-torchvision = [
-  { index = "pytorch-cpu", extra = "cpu" },
-  { index = "pytorch-cu129", extra = "gpu" },
-]
-
-torch-scatter = [
-  { index = "pyg-cpu", extra = "cpu" },
-  { index = "pyg-cu129", extra = "gpu" },
-]
-torch-sparse = [
-  { index = "pyg-cpu", extra = "cpu" },
-  { index = "pyg-cu129", extra = "gpu" },
-]
-torch-cluster = [
-  { index = "pyg-cpu", extra = "cpu" },
-  { index = "pyg-cu129", extra = "gpu" },
-]
-torch-spline-conv = [
-  { index = "pyg-cpu", extra = "cpu" },
-  { index = "pyg-cu129", extra = "gpu" },
-]
-
-[tool.uv.extra-build-dependencies]
-torch-cluster = [{ requirement = "torch", match-runtime = true }]
 
 [tool.fastapi]
 entrypoint = "main.py"

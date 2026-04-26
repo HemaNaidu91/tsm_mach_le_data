@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import logging
 import os
 from contextlib import asynccontextmanager
 
@@ -40,8 +39,8 @@ app = FastAPI(
     title=os.getenv("TITLE", "Movie Recommendation Model Service"),
     summary="FastAPI service for graph-based movie recommendations.",
     description=(
-        "Loads the latest W&B link regression checkpoint and scores unseen MovieLens "
-        "movies from a list of rated movie ids."
+        "Loads the latest W&B ONNX regression artifact plus graph bundle and scores "
+        "unseen MovieLens movies from a list of rated movie ids."
     ),
     version=os.getenv("VERSION_NR", "0.1.0"),
     lifespan=lifespan,
@@ -67,9 +66,10 @@ def health(
     return {
         "status": "ok",
         "artifact_path": recommendation_service.artifact_path,
+        "onnx_path": recommendation_service.onnx_path.as_posix(),
         "device": str(recommendation_service.device),
-        "checkpoint_epoch": recommendation_service.checkpoint_epoch,
-        "checkpoint_val_rmse": recommendation_service.checkpoint_val_rmse,
+        "available_providers": list(recommendation_service.available_providers),
+        "session_providers": list(recommendation_service.session_providers),
     }
 
 

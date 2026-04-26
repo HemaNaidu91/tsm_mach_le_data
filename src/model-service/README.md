@@ -1,6 +1,6 @@
 # Movie Recommendation Model Service
 
-This FastAPI service downloads the latest W&B link regression artifact, loads the saved checkpoint plus the prebuilt graph bundle, and returns the top 10 unseen movies for a rated input set.
+This FastAPI service downloads the latest W&B link regression artifact, loads the exported ONNX model plus the prebuilt graph bundle, and returns the top 10 unseen movies for a rated input set.
 
 ## Required environment variables
 
@@ -13,6 +13,7 @@ This FastAPI service downloads the latest W&B link regression artifact, loads th
 - `WANDB_ARTIFACT_NAME` defaults to `movie-rec-link-regression-weights`
 - `WANDB_ARTIFACT_ALIAS` defaults to `latest`
 - `MODEL_SERVICE_GRAPH_BUNDLE_FILE` defaults to `graph_bundle.pt`
+- `MODEL_SERVICE_ONNX_FILE` defaults to `graph_link_regression.onnx`
 - `MODEL_SERVICE_DEVICE` defaults to `auto`
 - `MODEL_SERVICE_TOP_K` defaults to `10`
 - `MODEL_SERVICE_ARTIFACT_CACHE_DIR` defaults to `./artifacts`
@@ -26,11 +27,19 @@ Create a virtual environment:
 uv venv .venv --python=3.12.4
 ```
 
+Activate it:
+
+```
+.\.venv\Scripts\activate
+```
+
 If you have a GPU and cuda installed, use:
 
 ```
 uv pip install -r pyproject.toml --extra gpu
 ```
+
+This installs `onnxruntime-gpu`, which is required for `CUDAExecutionProvider` to appear.
 
 Otherwise, use:
 
@@ -38,13 +47,17 @@ Otherwise, use:
 uv pip install -r pyproject.toml --extra cpu
 ```
 
+This installs the CPU-only `onnxruntime` package.
+
 Then, start the service:
 
 ```
-.\.venv\Scripts\python.exe model-service.py
+python model-service.py
 ```
 
-The first startup downloads the latest W&B artifact into the local `artifacts` folder. If W&B is unavailable, the service only falls back to cached artifacts inside that same folder.
+The first startup downloads the latest W&B artifact into the local `artifacts` folder. The service only needs `graph_link_regression.onnx` and `graph_bundle.pt` from that artifact. If W&B is unavailable, it only falls back to cached artifacts inside that same folder.
+
+The `/health` endpoint reports both `available_providers` and `session_providers`, so you can see whether ONNX Runtime actually has CUDA support and whether the running session is using it.
 
 ## Example request
 

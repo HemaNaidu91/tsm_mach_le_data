@@ -6,12 +6,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Sequence
 
+import numpy as np
 import pandas as pd
+import onnxruntime as ort
 import torch
 import wandb
 from torch_geometric.data import HeteroData
 
-from graph_regression import Model
 from schemas import RatedMovie
 
 
@@ -20,6 +21,7 @@ LOGGER = logging.getLogger(__name__)
 DEFAULT_ARTIFACT_ALIAS = "latest"
 DEFAULT_ARTIFACT_NAME = "movie-rec-link-regression-weights"
 DEFAULT_GRAPH_BUNDLE_NAME = "graph_bundle.pt"
+DEFAULT_ONNX_MODEL_NAME = "graph_link_regression.onnx"
 DEFAULT_TOP_K = 10
 
 
@@ -38,17 +40,20 @@ class RecommendationService:
     def __init__(
         self,
         *,
-        model: Model,
-        device: torch.device,
+        session: ort.InferenceSession,
+        device: str,
+        available_providers: Sequence[str],
+        onnx_path: Path,
         graph_bundle: LoadedGraphBundle,
         artifact_path: str,
-        artifact_dir: Path,
-        checkpoint_epoch: int | None,
-        checkpoint_val_rmse: float | None,
         top_k: int,
     ) -> None:
-        self.model = model
+        self.session = session
         self.device = device
+        self.available_providers = tuple(available_providers)
+        self.session_providers = tuple(session.get_providers())
+        self.onnx_path = onnx_path
+        self.onnx_output_name = session.get_outputs()[0].name
         self.base_data = graph_bundle.base_data
         self.movie_mapping = graph_bundle.movie_mapping
         self.candidate_movies = graph_bundle.candidate_movies
@@ -60,9 +65,6 @@ class RecommendationService:
             )
         )
         self.artifact_path = artifact_path
-        self.artifact_dir = artifact_dir
-        self.checkpoint_epoch = checkpoint_epoch
-        self.checkpoint_val_rmse = checkpoint_val_rmse
         self.top_k = top_k
 
     @classmethod
@@ -75,19 +77,20 @@ class RecommendationService:
         )
         artifact_root.mkdir(parents=True, exist_ok=True)
 
-        device = cls._resolve_device()
+        device, execution_providers = cls._resolve_runtime()
         artifact_dir, artifact_path = cls._resolve_artifact_dir(
             artifact_root=artifact_root,
         )
-        checkpoint_path = artifact_dir / "model_best.pt"
-        if not checkpoint_path.exists():
-            raise RuntimeError(f"Checkpoint not found at {checkpoint_path}.")
 
-        checkpoint = torch.load(
-            checkpoint_path,
-            map_location=device,
-            weights_only=False,
+        onnx_path = artifact_dir / os.getenv(
+            "MODEL_SERVICE_ONNX_FILE", DEFAULT_ONNX_MODEL_NAME
         )
+        if not onnx_path.exists():
+            raise RuntimeError(
+                "ONNX model was not found in the artifact at "
+                f"{onnx_path}. The model artifact must contain both "
+                f"{DEFAULT_GRAPH_BUNDLE_NAME} and {onnx_path.name}."
+            )
 
         graph_bundle_path = artifact_dir / os.getenv(
             "MODEL_SERVICE_GRAPH_BUNDLE_FILE", DEFAULT_GRAPH_BUNDLE_NAME
@@ -96,39 +99,34 @@ class RecommendationService:
             raise RuntimeError(
                 "Graph bundle was not found in the artifact at "
                 f"{graph_bundle_path}. The model artifact must contain both "
-                f"model_best.pt and {graph_bundle_path.name}."
+                f"{onnx_path.name} and {graph_bundle_path.name}."
             )
 
         graph_bundle = cls._load_graph_bundle(graph_bundle_path)
         LOGGER.info("Loaded graph bundle from %s.", graph_bundle_path)
 
-        hidden_channels = checkpoint["config"]["hidden_channels"]
-        model = Model(
-            hidden_channels=hidden_channels,
-            metadata=graph_bundle.base_data.metadata(),
-        ).to(device)
+        available_providers = ort.get_available_providers()
+        session_options = ort.SessionOptions()
+        session_options.log_severity_level = 3
+        session = ort.InferenceSession(
+            onnx_path.as_posix(),
+            sess_options=session_options,
+            providers=execution_providers,
+        )
+        active_device = cls._device_from_session(session)
 
-        warmup_data = graph_bundle.base_data.clone().to(device)
-        with torch.no_grad():
-            model(
-                warmup_data.x_dict,
-                warmup_data.edge_index_dict,
-                warmup_data.edge_attr_dict,
-                warmup_data["user", "rates", "movie"].edge_index,
-            )
-
-        model.load_state_dict(checkpoint["model_state_dict"])
-        model.eval()
-
-        LOGGER.info("Loaded recommendation model from %s on %s.", artifact_path, device)
+        LOGGER.info(
+            "Loaded recommendation ONNX model from %s using providers %s.",
+            onnx_path,
+            session.get_providers(),
+        )
         return cls(
-            model=model,
-            device=device,
+            session=session,
+            device=active_device,
+            available_providers=available_providers,
+            onnx_path=onnx_path,
             graph_bundle=graph_bundle,
             artifact_path=artifact_path,
-            artifact_dir=artifact_dir,
-            checkpoint_epoch=checkpoint.get("epoch"),
-            checkpoint_val_rmse=checkpoint.get("val_rmse"),
             top_k=int(os.getenv("MODEL_SERVICE_TOP_K", DEFAULT_TOP_K)),
         )
 
@@ -261,29 +259,44 @@ class RecommendationService:
         if candidate_movies.empty:
             raise PredictionValidationError("No candidate movies remain to score.")
 
-        infer_data = infer_data.to(self.device)
         candidate_movie_ids = torch.tensor(
             candidate_movies["mappedMovieId"].values,
             dtype=torch.long,
-            device=self.device,
         )
         candidate_user_ids = torch.full(
             (candidate_movie_ids.size(0),),
             new_user_id,
             dtype=torch.long,
-            device=self.device,
         )
         edge_label_index = torch.stack([candidate_user_ids, candidate_movie_ids], dim=0)
 
-        self.model.eval()
-        with torch.inference_mode():
-            pred = self.model(
-                infer_data.x_dict,
-                infer_data.edge_index_dict,
-                infer_data.edge_attr_dict,
-                edge_label_index,
-            )
-            pred = pred.clamp(min=0, max=5).detach().cpu().numpy()
+        ort_inputs = {
+            "user_x": infer_data["user"].x.detach().cpu().float().numpy(),
+            "movie_x": infer_data["movie"].x.detach().cpu().float().numpy(),
+            "rates_edge_index": infer_data["user", "rates", "movie"]
+            .edge_index.detach()
+            .cpu()
+            .long()
+            .numpy(),
+            "rates_edge_attr": infer_data["user", "rates", "movie"]
+            .edge_attr.detach()
+            .cpu()
+            .float()
+            .numpy(),
+            "rev_rates_edge_index": infer_data["movie", "rev_rates", "user"]
+            .edge_index.detach()
+            .cpu()
+            .long()
+            .numpy(),
+            "rev_rates_edge_attr": infer_data["movie", "rev_rates", "user"]
+            .edge_attr.detach()
+            .cpu()
+            .float()
+            .numpy(),
+            "edge_label_index": edge_label_index.detach().cpu().long().numpy(),
+        }
+        pred = self.session.run([self.onnx_output_name], ort_inputs)[0]
+        pred = np.clip(np.asarray(pred).reshape(-1), 0.0, 5.0)
 
         recommendations_df = candidate_movies[["movieId"]].copy()
         recommendations_df["predicted_rating"] = pred
@@ -301,13 +314,34 @@ class RecommendationService:
         ]
 
     @staticmethod
-    def _resolve_device() -> torch.device:
+    def _resolve_runtime() -> tuple[str, list[str]]:
         requested_device = os.getenv("MODEL_SERVICE_DEVICE", "auto").lower()
+        available_providers = ort.get_available_providers()
+
         if requested_device == "auto":
-            return torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        if requested_device.startswith("cuda") and not torch.cuda.is_available():
-            raise RuntimeError("CUDA was requested but is not available.")
-        return torch.device(requested_device)
+            if "CUDAExecutionProvider" in available_providers:
+                return "cuda", ["CUDAExecutionProvider", "CPUExecutionProvider"]
+            return "cpu", ["CPUExecutionProvider"]
+
+        if requested_device.startswith("cuda"):
+            if "CUDAExecutionProvider" not in available_providers:
+                raise RuntimeError(
+                    "CUDA was requested but ONNX Runtime CUDAExecutionProvider is not available."
+                )
+            return requested_device, ["CUDAExecutionProvider", "CPUExecutionProvider"]
+
+        if requested_device != "cpu":
+            raise RuntimeError(
+                "MODEL_SERVICE_DEVICE must be one of auto, cpu, or cuda."
+            )
+        return "cpu", ["CPUExecutionProvider"]
+
+    @staticmethod
+    def _device_from_session(session: ort.InferenceSession) -> str:
+        session_providers = session.get_providers()
+        if "CUDAExecutionProvider" in session_providers:
+            return "cuda"
+        return "cpu"
 
     @classmethod
     def _resolve_artifact_dir(cls, *, artifact_root: Path) -> tuple[Path, str]:
@@ -354,25 +388,21 @@ class RecommendationService:
         graph_bundle_filename = os.getenv(
             "MODEL_SERVICE_GRAPH_BUNDLE_FILE", DEFAULT_GRAPH_BUNDLE_NAME
         )
+        onnx_filename = os.getenv("MODEL_SERVICE_ONNX_FILE", DEFAULT_ONNX_MODEL_NAME)
         bundle_candidates: list[Path] = []
-        checkpoint_only_candidates: list[Path] = []
         if not artifact_root.exists():
             return None
 
         for path in artifact_root.glob(f"{artifact_name}*"):
-            if path.is_dir() and (path / "model_best.pt").exists():
-                if (path / graph_bundle_filename).exists():
-                    bundle_candidates.append(path)
-                else:
-                    checkpoint_only_candidates.append(path)
+            if not path.is_dir():
+                continue
+            if (path / graph_bundle_filename).exists() and (
+                path / onnx_filename
+            ).exists():
+                bundle_candidates.append(path)
 
         if bundle_candidates:
             return max(
                 bundle_candidates, key=lambda candidate: candidate.stat().st_mtime
-            )
-        if checkpoint_only_candidates:
-            return max(
-                checkpoint_only_candidates,
-                key=lambda candidate: candidate.stat().st_mtime,
             )
         return None
