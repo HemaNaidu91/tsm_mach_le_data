@@ -1,6 +1,9 @@
 # wandb save of local runs 
 training/poc/wandb
 
+# artifacts
+artifacts/
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[codz]
@@ -140,6 +143,7 @@ celerybeat.pid
 # Environments
 # .env
 /training/.env
+/src/model-service/.env
 .envrc
 .venv
 env/
