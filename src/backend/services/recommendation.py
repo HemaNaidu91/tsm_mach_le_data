@@ -1,19 +1,22 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException, Query
+import requests, dotenv, os, json
 
 from models.user import Users
 from models.rating import Ratings
 from models.movie import Movies, Movie_genres, Tags
 from models.enum import Genres
 
-from schemas.recommendation import MoviesResponse
+from schemas.recommendation import MoviesResponse, UserMovieRatings, MoviePredictions
+
+dotenv.load_dotenv()
 
 
 def get_movies(
     db: Session, title: str, genres: list, tags: list
 ) -> list[MoviesResponse]:
 
-    # prevent from loading all movies
+    # prevent from loading all movies -> this is no longer needed i think
     if (title is None) and (genres is None) and (tags is None):
         print("exception raised")
         raise HTTPException(
@@ -28,9 +31,9 @@ def get_movies(
             Genres.name.label("movie_genre"),
             Tags.tag.label("movie_tag"),
         )
-        .join(Tags)
-        .join(Movie_genres)
-        .join(Genres)
+        .outerjoin(Tags)
+        .outerjoin(Movie_genres)
+        .outerjoin(Genres)
     )
 
     # match available criteria and add as needed
@@ -42,10 +45,79 @@ def get_movies(
         query = query.filter(Tags.tag.in_(tags))
 
     rows: object = query.order_by(Movies.title).all()
+    movies: dict = movie_row_parser(rows)
+
+    response: list = [
+        MoviesResponse(
+            movie_id=v["movie_id"],
+            movie_title=v["movie_title"],
+            movie_genres=[g for g in v["movie_genres"] if g is not None],
+            movie_tags=[t for t in v["movie_tags"] if t is not None],
+        )
+        for v in movies.values()
+    ]
+
+    return response
+
+
+def create_movie_recommendations(
+    db: Session, user_movie_ratings: list[UserMovieRatings]
+) -> MoviePredictions:
+
+    # validations
+    movie_ids_ui: list = [item.movie_id for item in user_movie_ratings]
+    validation_movie_ids(movie_ids_ui, db)
+    check_model_service_health()
+
+    # get reccomendations from api
+    body: list = [item.model_dump() for item in user_movie_ratings]
+    predict_url: str = f"{os.getenv("MODEL_SERVICE_URL")}/predict"
+    r = requests.post(url=predict_url, json=body)
+
+    # parse model service response
+    api_response_unparsed: dict = json.loads(r.content.decode("utf-8"))
+    api_response: dict = {}
+    for item in api_response_unparsed:
+        api_response[item["movieId"]] = item["predictedRating"]
+
+    # enrich movie data for final response
+    query = (
+        db.query(
+            Movies.id.label("movie_id"),
+            Movies.title.label("movie_title"),
+            Genres.name.label("movie_genre"),
+            Tags.tag.label("movie_tag"),
+        )
+        .outerjoin(Tags)
+        .outerjoin(Movie_genres)
+        .outerjoin(Genres)
+    ).filter(Movies.id.in_(list(api_response.keys())))
+
+    rows = query.order_by(Movies.id).all()
+    movies: dict = movie_row_parser(rows)
+
+    response: list = [
+        MoviePredictions(
+            movie_id=v["movie_id"],
+            movie_title=v["movie_title"],
+            movie_genres=[g for g in v["movie_genres"] if g is not None],
+            movie_tags=[t for t in v["movie_tags"] if t is not None],
+            predicted_rating=api_response[int(v["movie_id"])],
+        )
+        for v in movies.values()
+    ]
+
+    return response
+
+
+########################## validation and utility funcitons ##########################
+
+
+def movie_row_parser(rows: object) -> dict:
+
     movies: dict = {}
 
     for r in rows:
-
         if r.movie_id not in movies:
 
             movies[r.movie_id] = {
@@ -62,32 +134,45 @@ def get_movies(
             r.movie_tag
         )  # using set to prevent duplicat tags
 
-    response: list = [
-        MoviesResponse(
-            movie_id=v["movie_id"],
-            movie_title=v["movie_title"],
-            movie_genres=list(v["movie_genres"]),
-            movie_tags=list(v["movie_tags"]),
+    return movies
+
+
+def check_model_service_health() -> None:
+
+    health_url: str = f"{os.getenv("MODEL_SERVICE_URL")}/health"
+    r = requests.get(health_url)
+
+    if r.status_code != 200:
+        raise HTTPException(status_code=500, detail="Model service not reachable")
+
+    response: dict = json.loads(r.content.decode("utf-8"))
+    if response["status"] != "ok":
+        raise HTTPException(status_code=500, detail="Model service health check failed")
+
+
+def validation_movie_ids(movie_ids: list[int], db: Session) -> None:
+
+    movie_ids_ui: list = list(set(movie_ids))
+
+    query = (
+        db.query(Movies.id.label("movie_id"))
+        .filter(Movies.id.in_(movie_ids_ui))
+        .distinct()
+    )
+    rows: object = query.all()
+
+    movie_ids_db: list = [int(r.movie_id) for r in rows]
+    nok_movie_ids: list = []
+
+    for id in movie_ids_ui:
+        if id not in movie_ids_db:
+            nok_movie_ids.append(id)
+
+    if len(nok_movie_ids) > 0:
+        raise HTTPException(
+            status_code=422,
+            detail=f"The following movie_ids do not exists: {nok_movie_ids}",
         )
-        for v in movies.values()
-    ]
-
-    return response
-
-
-def create_movie_recommendations(db: Session):
-
-    # TODO: Implement model correctly
-    # NOTE: This is just a placeholder, so the function returns something
-
-    import random
-    import string
-
-    letter: str = random.choice(string.ascii_letters)
-    size: int = random.choice([2, 3, 4])
-    movies: list = get_movies(db=db, title=letter, genres=None, tags=None)
-
-    return movies[:size]
 
 
 def validation_require_one(

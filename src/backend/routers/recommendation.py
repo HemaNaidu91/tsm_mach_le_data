@@ -20,11 +20,13 @@ def get_movies(
     return response
 
 
-@router.post("/create_movie_recommendations", response_model=list[MoviesResponse])
+@router.post("/create_movie_recommendations", response_model=list[MoviePredictions])
 def create_movie_rcommendations(
     user_movie_ratings: list[UserMovieRatings], db: Session = Depends(get_db)
 ):
-    response: list[MoviesResponse] = (
-        recommendation_service.create_movie_recommendations(db=db)
+    response: list[MoviePredictions] = (
+        recommendation_service.create_movie_recommendations(
+            db=db, user_movie_ratings=user_movie_ratings
+        )
     )
     return response
