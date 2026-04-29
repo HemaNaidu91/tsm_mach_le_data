@@ -35,7 +35,6 @@ from config import (
 )
 from graph import build_graph_dot
 
-
 st.set_page_config(
     page_title="CineMatch",
     page_icon="🎬",
@@ -382,14 +381,14 @@ def render_sidebar() -> None:
                         "Rating",
                         min_value=MIN_RATING,
                         max_value=MAX_RATING,
-                        value=float(movie["movie_rating"]),
+                        value=float(movie["rating"]),
                         step=RATING_STEP,
                         key=f"sidebar_rating_{st.session_state.active_profile_id}_{movie_id}",
                     )
 
-                    if new_rating != float(movie["movie_rating"]):
-                        active_profile["selected_movies"][movie_id]["movie_rating"] = (
-                            float(new_rating)
+                    if new_rating != float(movie["rating"]):
+                        active_profile["selected_movies"][movie_id]["rating"] = float(
+                            new_rating
                         )
                         refresh_all_recommendations()
                         st.rerun()

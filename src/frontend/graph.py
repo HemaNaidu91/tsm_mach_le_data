@@ -49,7 +49,7 @@ def build_user_genre_vector(profile: dict[str, Any]) -> dict[str, float]:
     genre_vector: dict[str, float] = {}
 
     for movie in profile["selected_movies"].values():
-        rating = float(movie["movie_rating"])
+        rating = float(movie["rating"])
 
         for genre in movie.get("movie_genres", []):
             genre_vector[genre] = genre_vector.get(genre, 0.0) + rating
@@ -290,7 +290,7 @@ def build_graph_dot() -> str:
 
     for profile_id, profile in profiles.items():
         for movie_id, movie in profile["selected_movies"].items():
-            rating = float(movie["movie_rating"])
+            rating = float(movie["rating"])
 
             lines.append(
                 f"  {profile_id} -> movie_{movie_id} "

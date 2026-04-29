@@ -213,7 +213,7 @@ def rating_to_payload(profile_id: str | None = None) -> list[dict[str, float | i
     return [
         {
             "movie_id": int(movie["movie_id"]),
-            "movie_rating": float(movie["movie_rating"]),
+            "rating": float(movie["rating"]),
         }
         for movie in profile["selected_movies"].values()
     ]
@@ -282,7 +282,7 @@ def add_movie_to_profile(movie: dict[str, Any], rating: float) -> None:
 
     active_profile["selected_movies"][movie_id] = {
         **movie,
-        "movie_rating": float(rating),
+        "rating": float(rating),
     }
 
     refresh_all_recommendations()
