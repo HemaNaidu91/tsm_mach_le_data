@@ -26,13 +26,17 @@ Notes:
    1. Setup as:
       1. ```.src/backend/.venv/```
       2. ```.src/frontend/.venv/```
+      3. ```.src/model-service/.venv/```
    2. Activate and install the concerning reqruirements with uv
 
 3. Boot the services:
    1. Backend: ```run_dev_server.py```
    2. Frontend: ```streamlit run main.py```
+   3. Model Service: ```model-service.py```
 
-4. FsatAPI Docu available at <a href="localhost:8000/docs">localhost:8000/docs</a> or <a href="127.0.0.1:8000/docs">127.0.0.1:8000/docs</a>.
+4. FsatAPI Docu available at:
+   1. Backend <a href="localhost:8000/docs">localhost:8000/docs</a> or <a href="127.0.0.1:8000/docs">127.0.0.1:8000/docs</a>.
+   2. Model Service <a href="localhost:8001/docs">localhost:8000/docs</a> or <a href="127.0.0.1:8001/docs">127.0.0.1:8000/docs</a>.
 
 
 ## For Deployment - with Docker
