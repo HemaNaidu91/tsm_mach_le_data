@@ -1,1 +1,17 @@
 # some docker stuff
+FROM python:3.10
+
+WORKDIR /app
+
+# install dependencies
+COPY requirements.txt .
+RUN pip install --no-cache-dir -r requirements.txt
+
+# copy app
+COPY . .
+
+# expose streamlit port
+EXPOSE 8501
+
+# run streamlit
+CMD ["streamlit", "run", "main.py", "--server.port=8501", "--server.address=0.0.0.0"]
