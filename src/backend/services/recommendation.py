@@ -15,13 +15,18 @@ dotenv.load_dotenv()
 def get_movies(
     db: Session, title: str, genres: list, tags: list
 ) -> list[MoviesResponse]:
+    """Fetches movies from the database, filtered by the given args. Filter uses AND for the different params.
+    The passed values are not validated, as this is a search function.
 
-    # prevent from loading all movies -> this is no longer needed i think
-    if (title is None) and (genres is None) and (tags is None):
-        print("exception raised")
-        raise HTTPException(
-            status_code=403, detail="At least one query parameter must be provided"
-        )
+    Args:
+        db (Session): Provided by the session factory from the router
+        title (str): Movie titles
+        genres (list): Movie genres
+        tags (list): Tags
+
+    Returns:
+        list[MoviesResponse]: List of movies and according attributes
+    """
 
     # build conditional query
     query = (
@@ -63,6 +68,15 @@ def get_movies(
 def create_movie_recommendations(
     db: Session, user_movie_ratings: list[UserMovieRatings]
 ) -> MoviePredictions:
+    """Generates movie reccomendations, using the model-service api.
+
+    Args:
+        db (Session): Provided by the session factory from the router
+        user_movie_ratings (list[UserMovieRatings]): provided user ratings, needed for the recc system
+
+    Returns:
+        MoviePredictions: Movies, with a rating prediction
+    """
 
     # validations
     movie_ids_ui: list = [item.movie_id for item in user_movie_ratings]
@@ -114,6 +128,14 @@ def create_movie_recommendations(
 
 
 def movie_row_parser(rows: object) -> dict:
+    """Parses the given row-itterable from SQLAlchemy to a python dict.
+
+    Args:
+        rows (object): SQLAlchemy itterable
+
+    Returns:
+        dict: {"movie_id": 1, "movie_title": "title", movie_genres: ["genre1",], movie_tags: ["tag1", ...]}
+    """
 
     movies: dict = {}
 
@@ -138,6 +160,12 @@ def movie_row_parser(rows: object) -> dict:
 
 
 def check_model_service_health() -> None:
+    """Checks if the model-service is reachable and working correctly
+
+    Raises:
+        HTTPException: 500 if not reachable
+        HTTPException: 500 if not working as intended
+    """
 
     health_url: str = f"{os.getenv("MODEL_SERVICE_URL")}/health"
     r = requests.get(health_url)
@@ -151,6 +179,15 @@ def check_model_service_health() -> None:
 
 
 def validation_movie_ids(movie_ids: list[int], db: Session) -> None:
+    """Validates, if the given movie_ids exists in the database, and thus in the reccomendation system.
+
+    Args:
+        movie_ids (list[int]): List of movie ids
+        db (Session): DB session, forward from router to not open a new one
+
+    Raises:
+        HTTPException: 422 if one or more ids are not in the system
+    """
 
     movie_ids_ui: list = list(set(movie_ids))
 
@@ -180,6 +217,20 @@ def validation_require_one(
     genres: list | None = Query(default=None),
     tags: list | None = Query(default=None),
 ) -> dict:
+    """Validation function, called by the GET /movies router to check if at least one search param was given.
+
+    Args:
+        title (str | None, optional): Defaults to Query(default=None).
+        genres (list | None, optional): Defaults to Query(default=None).
+        tags (list | None, optional): Defaults to Query(default=None).
+
+    Raises:
+        HTTPException: 422 if not at least one param was passed
+
+    Returns:
+        dict: returns the sorted query params as a dict: {"title": title, "genres": genres, "tags": tags}
+    """
+
     if not any([title, genres, tags]):
         raise HTTPException(
             status_code=422, detail="At least one query parameter must be provided."

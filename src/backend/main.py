@@ -8,10 +8,8 @@ from routers.version import router as version_router
 from routers.recommendation import router as recommendation_router
 from routers.enum import router as enum_router
 
-
 # load env variables
 load_dotenv()
-# TBD: str = os.getenv("TBD")
 
 swagger_ui_parameters = {"syntaxHighlight": {"theme": os.getenv("SWAGGER_THEME")}}
 description: str = """
