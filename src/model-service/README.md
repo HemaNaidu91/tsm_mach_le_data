@@ -59,9 +59,75 @@ The first startup downloads the latest W&B artifact into the local `artifacts` f
 
 The `/health` endpoint reports both `available_providers` and `session_providers`, so you can see whether ONNX Runtime actually has CUDA support and whether the running session is using it.
 
+## Run with Docker
+
+Build the default CPU image from the repository root:
+
+```bash
+docker build -t movie-rec-model-service:cpu src/model-service
+```
+
+Run the service with the environment variables from `.env`:
+
+```bash
+docker run --rm \
+  --env-file src/model-service/.env \
+  -p 8001:8001 \
+  -v "$(pwd)/src/model-service/artifacts:/app/artifacts" \
+  movie-rec-model-service:cpu
+```
+
+The volume mount keeps downloaded W&B artifacts on the host, so restarts can reuse the local `artifacts` cache.
+
+To build the image with GPU dependencies instead, use:
+
+```bash
+docker build \
+  --build-arg MODEL_SERVICE_EXTRA=gpu \
+  -t movie-rec-model-service:gpu \
+  src/model-service
+```
+
+Then run it with Docker's GPU runtime enabled:
+
+```bash
+docker run --rm \
+  --gpus all \
+  --env-file src/model-service/.env \
+  -e MODEL_SERVICE_DEVICE=cuda \
+  -p 8001:8001 \
+  -v "$(pwd)/src/model-service/artifacts:/app/artifacts" \
+  movie-rec-model-service:gpu
+```
+
+After startup, check the service:
+
+```bash
+curl http://localhost:8001/health
+```
+
 ## Example request
 
-If you use powershell, you can test the service with:
+If you use macOS/Linux, you can test the service with:
+
+```bash
+curl -X POST http://localhost:8001/predict \
+  -H "Content-Type: application/json" \
+  -d '[
+    { "movieId": 356, "rating": 5.0 },
+    { "movieId": 318, "rating": 4.0 },
+    { "movieId": 296, "rating": 5.0 },
+    { "movieId": 593, "rating": 3.0 },
+    { "movieId": 2571, "rating": 5.0 },
+    { "movieId": 260, "rating": 3.0 },
+    { "movieId": 480, "rating": 3.0 },
+    { "movieId": 110, "rating": 1.0 },
+    { "movieId": 589, "rating": 4.0 },
+    { "movieId": 527, "rating": 3.0 }
+  ]'
+```
+
+If you use PowerShell, you can test the service with:
 
 ```powershell
 $body = @'

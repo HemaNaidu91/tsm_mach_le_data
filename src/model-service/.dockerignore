@@ -1,0 +1,11 @@
+.env
+.env.*
+!.env_sample
+.venv/
+__pycache__/
+.ruff_cache/
+artifacts/
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
