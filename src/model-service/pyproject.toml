@@ -10,6 +10,7 @@ dependencies = [
   "python-dotenv",
   "fastapi",
   "uvicorn",
+  "ruff"
 ]
 
 [project.optional-dependencies]
