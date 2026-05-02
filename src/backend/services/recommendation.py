@@ -85,7 +85,7 @@ def create_movie_recommendations(
 
     # get reccomendations from api
     body: list = [item.model_dump() for item in user_movie_ratings]
-    predict_url: str = f"{os.getenv("MODEL_SERVICE_URL")}/predict"
+    predict_url: str = f"{os.getenv('MODEL_SERVICE_URL')}/predict"
     r = requests.post(url=predict_url, json=body)
 
     # parse model service response
@@ -167,7 +167,7 @@ def check_model_service_health() -> None:
         HTTPException: 500 if not working as intended
     """
 
-    health_url: str = f"{os.getenv("MODEL_SERVICE_URL")}/health"
+    health_url: str = f"{os.getenv('MODEL_SERVICE_URL')}/health"
     r = requests.get(health_url)
 
     if r.status_code != 200:
