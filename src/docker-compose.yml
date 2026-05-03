@@ -31,15 +31,6 @@ services:
       - backend
     ports:
       - "8501:8501"
-
-  model-service:
-    build:
-      context: ./model-service
-      dockerfile: Dockerfile
-    container_name: model_service
-    ports:
-      - "8001:8001"
-
 volumes:
   postgres_data:
   
