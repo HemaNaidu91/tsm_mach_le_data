@@ -17,7 +17,7 @@ from config import (
     MAX_RATING,
     MIN_RATING,
     RATING_STEP,
-    TOP_K_RECOMMENDATIONS,
+    TOP_K_GRAPH_RECOMMENDATIONS,
 )
 
 
@@ -127,6 +127,10 @@ def reset_graph() -> None:
     active profile, and sets the current rating back to the default value.
     """
     clear_ui_state()
+
+    st.session_state.pop("collapsed_graph_genres", None)
+    st.session_state.pop("visible_graph_genres", None)
+    st.session_state.pop("graph_genre_movie_counts", None)
 
     st.session_state.profile_counter = 1
     st.session_state.profiles = {
@@ -255,7 +259,7 @@ def refresh_recommendations(profile_id: str | None = None) -> None:
         if int(movie["movie_id"]) not in selected_movie_ids
     ]
 
-    profile["recommendations"] = filtered_recommendations[:TOP_K_RECOMMENDATIONS]
+    profile["recommendations"] = filtered_recommendations[:TOP_K_GRAPH_RECOMMENDATIONS]
 
 
 def refresh_all_recommendations() -> None:

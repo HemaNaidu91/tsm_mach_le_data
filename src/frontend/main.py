@@ -9,6 +9,7 @@ file stays focused on layout and user interaction.
 
 from __future__ import annotations
 
+from html import escape
 from typing import Any
 
 import streamlit as st
@@ -31,9 +32,14 @@ from config import (
     MAX_SEARCH_RESULTS,
     MIN_RATING,
     RATING_STEP,
-    TOP_K_RECOMMENDATIONS,
+    TOP_K_RECOMMENDATION_CARDS,
 )
-from graph import build_graph_dot
+from graph import (
+    build_graph_dot,
+    collect_graph_genre_counts,
+    sync_collapsed_graph_genres,
+    toggle_graph_genre,
+)
 
 st.set_page_config(
     page_title="CineMatch",
@@ -85,6 +91,66 @@ def inject_theme_aware_styles() -> None:
                 stroke: var(--st-text-color, currentColor) !important;
                 stroke-width: 1.2px !important;
             }
+
+            .cinematch-recommendation-grid {
+                display: grid;
+                gap: 1.25rem;
+                margin-top: 1.25rem;
+            }
+
+            .cinematch-recommendation-card {
+                border: 1px solid var(--st-border-color, rgba(128, 128, 128, 0.35));
+                border-radius: 0.5rem;
+                padding: 1.25rem;
+                height: 100%;
+                background: transparent;
+                display: flex;
+                flex-direction: column;
+            }
+
+            .cinematch-recommendation-title {
+                font-size: 1.65rem;
+                line-height: 1.25;
+                font-weight: 700;
+                margin-bottom: 1.25rem;
+            }
+
+            .cinematch-recommendation-caption {
+                color: rgba(156, 163, 175, 1);
+                font-weight: 600;
+                margin-bottom: 1.25rem;
+            }
+
+            .cinematch-recommendation-label {
+                font-weight: 700;
+                margin-bottom: 0.4rem;
+            }
+
+            .cinematch-recommendation-rating {
+                font-size: 2.15rem;
+                line-height: 1.2;
+                margin-bottom: 1.2rem;
+            }
+
+            .cinematch-progress {
+                height: 0.55rem;
+                border-radius: 999px;
+                background: rgba(120, 120, 140, 0.28);
+                overflow: hidden;
+                margin-bottom: 1.35rem;
+            }
+
+            .cinematch-progress-fill {
+                height: 100%;
+                border-radius: 999px;
+                background: #1E88E5;
+            }
+
+            .cinematch-recommendation-meta {
+                margin-top: 0.35rem;
+                font-size: 1rem;
+                line-height: 1.5;
+            }
         </style>
         """,
         unsafe_allow_html=True,
@@ -98,7 +164,7 @@ def format_genres(movie: dict[str, Any]) -> str:
     if not genres:
         return "No genres"
 
-    return ", ".join(sorted(genres))
+    return ", ".join(genres)
 
 
 def format_tags(movie: dict[str, Any], max_tags: int = 6) -> str:
@@ -108,10 +174,9 @@ def format_tags(movie: dict[str, Any], max_tags: int = 6) -> str:
     if not tags:
         return "No tags"
 
-    sorted_tags = sorted(tags)
-    visible_tags = sorted_tags[:max_tags]
+    visible_tags = tags[:max_tags]
 
-    if len(sorted_tags) > max_tags:
+    if len(tags) > max_tags:
         return ", ".join(visible_tags) + ", ..."
 
     return ", ".join(visible_tags)
@@ -180,32 +245,50 @@ def render_recommendations() -> None:
     active_profile_name = active_profile["name"]
 
     st.subheader(
-        f"Top {TOP_K_RECOMMENDATIONS} Recommendations for {active_profile_name}"
+        f"Top {TOP_K_RECOMMENDATION_CARDS} Recommendations for {active_profile_name}"
     )
 
     if not active_profile["selected_movies"]:
         st.info("Add at least one rated movie to generate recommendations.")
         return
 
-    if st.button("Refresh all recommendations", use_container_width=False):
-        refresh_all_recommendations()
-        st.rerun()
-
-    recommendations = active_profile["recommendations"][:TOP_K_RECOMMENDATIONS]
+    recommendations = sorted(
+        active_profile["recommendations"],
+        key=lambda movie: float(movie.get("predicted_rating", 0.0)),
+        reverse=True,
+    )[:TOP_K_RECOMMENDATION_CARDS]
 
     if not recommendations:
         st.warning("No recommendations available yet.")
         return
 
-    columns = st.columns(TOP_K_RECOMMENDATIONS)
+    cards_html: list[str] = []
 
-    for column, movie in zip(columns, recommendations):
-        with column:
-            with st.container(border=True):
-                st.markdown(f"### {movie['movie_title']}")
-                st.caption(f"Movie ID: {movie['movie_id']}")
-                st.write(f"**Genres:** {format_genres(movie)}")
-                st.write(f"**Tags:** {format_tags(movie)}")
+    for movie in recommendations:
+        predicted_rating = float(movie.get("predicted_rating", 0.0))
+        progress_percent = max(0.0, min(100.0, predicted_rating / 5.0 * 100.0))
+
+        cards_html.append(
+            '<div class="cinematch-recommendation-card">'
+            f'<div class="cinematch-recommendation-title">{escape(movie["movie_title"])}</div>'
+            f'<div class="cinematch-recommendation-caption">Movie ID: {escape(str(movie["movie_id"]))}</div>'
+            '<div class="cinematch-recommendation-label">Predicted rating</div>'
+            f'<div class="cinematch-recommendation-rating">{predicted_rating:.2f} / 5.00</div>'
+            '<div class="cinematch-progress">'
+            f'<div class="cinematch-progress-fill" style="width: {progress_percent:.1f}%;"></div>'
+            "</div>"
+            f'<div class="cinematch-recommendation-meta"><strong>Genres:</strong> {escape(format_genres(movie))}</div>'
+            f'<div class="cinematch-recommendation-meta"><strong>Tags:</strong> {escape(format_tags(movie))}</div>'
+            "</div>"
+        )
+
+    st.markdown(
+        f'<div class="cinematch-recommendation-grid" '
+        f'style="grid-template-columns: repeat({len(recommendations)}, minmax(0, 1fr));">'
+        f"{''.join(cards_html)}"
+        f"</div>",
+        unsafe_allow_html=True,
+    )
 
 
 def render_graph() -> None:
@@ -219,6 +302,30 @@ def render_graph() -> None:
     if not has_any_movie:
         st.info("The graph appears after at least one user rates a movie.")
         return
+
+    graph_genre_counts = collect_graph_genre_counts()
+    graph_genres = list(graph_genre_counts.keys())
+    collapsed_genres = sync_collapsed_graph_genres(graph_genre_counts)
+
+    if graph_genres:
+        st.caption(
+            "Use the genre buttons to collapse or expand movie groups in the graph."
+        )
+
+        columns = st.columns(min(4, len(graph_genres)))
+
+        for index, genre in enumerate(graph_genres):
+            is_collapsed = genre in collapsed_genres
+            button_label = f"▶ {genre}" if is_collapsed else f"▼ {genre}"
+
+            with columns[index % len(columns)]:
+                if st.button(
+                    button_label,
+                    key=f"toggle_graph_genre_{genre}",
+                    use_container_width=True,
+                ):
+                    toggle_graph_genre(genre)
+                    st.rerun()
 
     dot = build_graph_dot()
     st.graphviz_chart(dot, use_container_width=True)
@@ -433,6 +540,14 @@ def render_movie_suggestions(
         st.info("No matching movies found.")
         return None
 
+    search_results = sorted(
+        search_results,
+        key=lambda movie: (
+            str(movie.get("movie_title", "")).lower(),
+            int(movie.get("movie_id", 0)),
+        ),
+    )
+
     selected_movie = st.session_state.selected_search_movie_by_profile.get(profile_id)
 
     if selected_movie is None:
@@ -440,6 +555,12 @@ def render_movie_suggestions(
         st.session_state.selected_search_movie_by_profile[profile_id] = selected_movie
 
     selected_movie_id = str(selected_movie["movie_id"])
+
+    for movie in search_results:
+        if str(movie["movie_id"]) == selected_movie_id:
+            selected_movie = movie
+            st.session_state.selected_search_movie_by_profile[profile_id] = movie
+            break
 
     for movie in search_results[:MAX_SEARCH_RESULTS]:
         movie_id = str(movie["movie_id"])
