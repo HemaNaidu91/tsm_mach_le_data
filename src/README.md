@@ -2,7 +2,7 @@
 
 This is a quick guide on how to build and start the application
 
-Notes:
+Notes for development:
 - About environments:
   - All virtual environments should be named ```.venv```
   - The config files should be named ```.env```
@@ -12,18 +12,18 @@ Notes:
 
 ## For Poduction - with docker
 
-1. Adjust the ```/backend/.evv``` file:
+1. Adjust the ```/backend/.evv``` file (if needed):
       1. ```POSTGRES_HOST=db```
       2. ```MODEL_SERVICE_URL=http://model-service:8001```
-2. Adjust the ```/frontend/.evv``` file:
+2. Adjust the ```/frontend/.evv``` file (if needed):
       1. ```API_URL=http://backend:8001```
 3. Open a shell or bash:
    1. Navigate to the ./src directory
    2. run to build and boot:
-      1. shell: ```docker compose -f docker-compose.prod.yml up --build```
-      2. bash: ```docker compose -f docker-compose.prod.yml up --build```
+      1. shell: ```docker compose -f docker-compose.db_included.yml up --build```
+      2. bash:  ```docker compose -f docker-compose.db_included.yml up --build```
 
-## For Development - without docker
+## For Development - without docker [Legacy]
 
 1. Install and launch PostgreSQL Server
    1. Installation guide: <a href='https://www.postgresql.org/download/'>PostgreSQL Downloads</a><br>Important: Create a user with the following credentials (or change the connection config in ./src/backend/.env if you must):
