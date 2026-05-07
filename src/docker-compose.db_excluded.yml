@@ -1,0 +1,26 @@
+version: "3.9"
+
+services:
+  backend:
+    build: ./backend
+    container_name: fastapi_backend
+    environment:
+      DATABASE_URL: postgresql://postgres:postgres@db:5432/cinematch
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build: ./frontend
+    container_name: streamlit_frontend
+    depends_on:
+      - backend
+    ports:
+      - "8501:8501"
+
+  model-service:
+    build:
+      context: ./model-service
+      dockerfile: Dockerfile
+    container_name: model_service
+    ports:
+      - "8001:8001"

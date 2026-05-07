@@ -12,9 +12,11 @@ import onnxruntime as ort
 import torch
 import wandb
 from torch_geometric.data import HeteroData
+from dotenv import load_dotenv
 
 from schemas import RatedMovie
 
+load_dotenv()
 
 LOGGER = logging.getLogger(__name__)
 
@@ -358,6 +360,7 @@ class RecommendationService:
             f"{wandb_entity}/{wandb_project}/{artifact_name}:{artifact_alias}"
         )
         try:
+            wandb.login(key=os.getenv("WANDB_API_KEY")) # added to fetch from online
             api = wandb.Api()
             artifact = api.artifact(artifact_path, type="model")
             download_dir = artifact_root / f"{artifact_name}_{artifact.version}"

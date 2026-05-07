@@ -1,0 +1,66 @@
+services:
+
+  #db containerization
+  db:
+    image: postgres:18
+    container_name: postgres_db
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: cinematch
+    ports:
+      - "5432:5432" # expose port for direct interaction with db (pgadmin, dbeaver, etc.)
+    volumes:
+      - postgres_data:/var/lib/postgresql # persist data between restarts
+      - ./postgresql/ml_movies_small.sql:/docker-entrypoint-initdb.d/ml_movies_small.sql #installs the schemas and populates them if no volume is found
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+
+  # other services
+
+  model-service:
+    build:
+      context: ./model-service
+      dockerfile: Dockerfile
+    container_name: model_service
+    env_file:
+      - ./model-service/.env
+    ports:
+      - "8001:8001"
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fastapi_backend
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # Linux only
+    depends_on:
+      db:
+        condition: service_healthy
+      model-service:
+        condition: service_started
+    env_file:
+      - ./backend/.env
+    ports:
+      - "8000:8000"
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: streamlit_frontend
+    depends_on:
+      backend:
+        condition: service_started
+    env_file:
+      - ./frontend/.env
+    ports:
+      - "8501:8501"
+
+volumes:
+  postgres_data:

@@ -38,11 +38,7 @@ app.include_router(enum_router, prefix="/api/enum", tags=["enums"])
 
 # setup cors
 origins: list = [
-    "http://localhost:8501",  # default port for streamlit
-    "https://localhost:8501",  # default port for streamlit
-    "http://127.0.0.1:8501",
-    "https://127.0.0.1:8501",
-    # "*", #use this if all else fails
+    "*", # allow all ports, so that the api can be used as a webservice
 ]
 
 app.add_middleware(

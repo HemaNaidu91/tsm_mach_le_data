@@ -1,6 +1,9 @@
 from __future__ import annotations
 
 from pydantic import AliasChoices, BaseModel, ConfigDict, Field
+from dotenv import load_dotenv
+
+load_dotenv()
 
 
 class RatedMovie(BaseModel):

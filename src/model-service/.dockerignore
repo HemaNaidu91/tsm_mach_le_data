@@ -4,7 +4,6 @@
 .venv/
 __pycache__/
 .ruff_cache/
-artifacts/
 *.pyc
 *.pyo
 *.pyd

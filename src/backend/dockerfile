@@ -1,0 +1,21 @@
+FROM python:3.10-slim
+
+WORKDIR /app
+
+ENV PYTHONUNBUFFERED=1
+
+RUN apt-get update && apt-get install -y gcc libpq-dev
+
+# install dependencies
+COPY requirements.txt .
+RUN python -m pip install --no-cache-dir --upgrade pip uv
+# RUN uv pip install --no-cache-dir -r requirements.txt
+RUN uv pip install --system --no-cache -r requirements.txt
+
+# copy all files
+COPY . .
+
+# expose fastapi port
+EXPOSE 8000
+
+CMD ["python", "run_dev_server.py"]

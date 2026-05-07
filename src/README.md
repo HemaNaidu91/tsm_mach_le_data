@@ -10,6 +10,19 @@ Notes:
 - About backend:
   - The backend uses a simplified structure due to its limited size
 
+## For Poduction - with docker
+
+1. Adjust the ```/backend/.evv``` file:
+      1. ```POSTGRES_HOST=db```
+      2. ```MODEL_SERVICE_URL=http://model-service:8001```
+2. Adjust the ```/frontend/.evv``` file:
+      1. ```API_URL=http://backend:8001```
+3. Open a shell or bash:
+   1. Navigate to the ./src directory
+   2. run to build and boot:
+      1. shell: ```docker compose -f docker-compose.prod.yml up --build```
+      2. bash: ```docker compose -f docker-compose.prod.yml up --build```
+
 ## For Development - without docker
 
 1. Install and launch PostgreSQL Server
@@ -21,6 +34,9 @@ Notes:
       2. bash:  ```sudo systemctl start postgresql```
    3. Create a database named <i>cinematch</i>
    4. Install the postgres .dump file (see: <a href='https://www.bytebase.com/reference/postgres/how-to/how-to-install-pgdump-on-mac-ubuntu-centos-windows/'>How to install pg_dump on your Mac, Ubuntu, CentOS, Windows</a>)
+   5. Adjust the ```/backend/.evv``` file:
+      1. For local use: ```POSTGRES_HOST=localhost```
+      2. (For docker use: ```POSTGRES_HOST=db```)
    
 2. Create and install the local virtual environments as ```.venv```:
    1. Setup as:

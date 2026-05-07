@@ -16,11 +16,13 @@ COPY pyproject.toml ./
 RUN uv pip install --system --no-cache -r pyproject.toml --extra "${MODEL_SERVICE_EXTRA}"
 
 RUN addgroup --system app \
-    && adduser --system --ingroup app app \
+    && adduser --system --home /app --ingroup app app \
     && mkdir -p /app/artifacts \
     && chown -R app:app /app
 
+
 COPY --chown=app:app *.py ./
+COPY . .
 
 USER app
 
