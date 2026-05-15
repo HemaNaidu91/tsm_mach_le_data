@@ -7,15 +7,6 @@ on:
   pull_request:
     branches:
       - main
-name: CI Pipeline
-
-on:
-  push:
-    branches:
-      - main
-  pull_request:
-    branches:
-      - main
 
 jobs:
   test:
