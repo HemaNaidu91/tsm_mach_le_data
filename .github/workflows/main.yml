@@ -8,15 +8,29 @@ on:
     branches:
       - main
 
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
 jobs:
   test:
     runs-on: ubuntu-latest
 
+    env:
+      DB_HOST: ${{ secrets.DB_HOST }}
+      DB_USER: ${{ secrets.DB_USER }}
+      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
+      WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
+      ARTIFACT_ROOT: ${{ secrets.ARTIFACT_ROOT }}
+
     steps:
-      - name: Checkout repository
+      - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Install Python
+      - name: Setup Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
