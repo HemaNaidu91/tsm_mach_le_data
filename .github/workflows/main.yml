@@ -7,29 +7,37 @@ on:
   pull_request:
     branches:
       - main
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
 
 jobs:
   test:
     runs-on: ubuntu-latest
 
-    env:
-      DB_HOST: ${{ secrets.DB_HOST }}
-      DB_USER: ${{ secrets.DB_USER }}
-      DB_PASSWORD: ${{ secrets.DB_PASSWORD }}
-      WANDB_API_KEY: ${{ secrets.WANDB_API_KEY }}
-      ARTIFACT_ROOT: ${{ secrets.ARTIFACT_ROOT }}
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: "3.12"
+      - name: Start full system (docker compose)
+        run: |
+          docker compose -f docker-compose.db_included.yml up -d --build
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Wait for services to be ready
+        run: sleep 60
 
-      - name: Run tests
-        run: pytest
+      - name: Install test dependencies
+        run: pip install pytest requests
+
+      - name: Run integration tests
+        run: pytest -q
+
+      - name: Shutdown system
+        if: always()
+        run: docker compose down -v
