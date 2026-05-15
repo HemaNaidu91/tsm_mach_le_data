@@ -6,6 +6,7 @@ torchvision
 streamlit
 SQLAlchemy
 psycopg2-binary
+pytest
 
 sentence-transformers
 fuzzywuzzy[speedup]
