@@ -27,8 +27,8 @@ jobs:
 
       - name: Build and start services
         run: |
-          docker compose -f docker-compose.db_included.yml up -d --build
-
+          docker compose -f infra/docker-compose.db_included.yml up -d --build
+          
       - name: Wait for DB to be ready
         run: sleep 15
 
@@ -41,4 +41,4 @@ jobs:
           docker compose exec -T model-service pytest
 
       - name: Shutdown
-        run: docker compose -f docker-compose.db_included.yml down
+        run: docker compose -f ./docker-compose.db_included.yml down
